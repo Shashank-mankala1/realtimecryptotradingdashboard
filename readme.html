@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Cryptocurrency TradeBots</title>
+            <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only],
+.vscode-high-contrast:not(.vscode-high-contrast-light) img[src$=\#gh-light-mode-only],
+.vscode-high-contrast-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+            
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+<style>
+:root {
+  --color-note: #0969da;
+  --color-tip: #1a7f37;
+  --color-warning: #9a6700;
+  --color-severe: #bc4c00;
+  --color-caution: #d1242f;
+  --color-important: #8250df;
+}
+
+</style>
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-note: #2f81f7;
+    --color-tip: #3fb950;
+    --color-warning: #d29922;
+    --color-severe: #db6d28;
+    --color-caution: #f85149;
+    --color-important: #a371f7;
+  }
+}
+
+</style>
+<style>
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 16px;
+  color: inherit;
+  border-left: .25em solid #888;
+}
+
+.markdown-alert>:first-child {
+  margin-top: 0
+}
+
+.markdown-alert>:last-child {
+  margin-bottom: 0
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1
+}
+
+.markdown-alert .markdown-alert-title .octicon {
+  margin-right: 0.5rem;
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left-color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left-color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left-color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left-color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left-color: var(--color-caution);
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: var(--color-caution);
+}
+
+</style>
+        
+        </head>
+        <body class="vscode-body vscode-light">
+            <h1 id="cryptocurrency-tradebots">Cryptocurrency TradeBots</h1>
+<h2 id="steps-1-start-up-the-docker-containers">Steps 1: Start up the docker containers</h2>
+<ol>
+<li>Execute <code>docker build -t ml-trading-service ./services/base</code></li>
+<li>Execute <code>docker-compose up -d</code></li>
+</ol>
+<h2 id="step-2-fetch-historical-data-from-the-past-30-days">Step 2: Fetch historical data from the past 30 days</h2>
+<ol>
+<li>Execute <code>docker exec -it backfill bash</code></li>
+<li>Execute <code>time python fetch_historical_trade_date.py</code></li>
+<li>Execute <code>time python load_historical_data_as_candles.py</code></li>
+</ol>
+<h2 id="step-3-start-fetching-the-realtime-crypto-trades">Step 3: Start fetching the realtime crypto trades</h2>
+<ol>
+<li>Execute <code>docker exec -it realtime bash</code></li>
+<li>Execute <code>tmux</code></li>
+<li>Execute <code>python fetch_realtime_data.py</code></li>
+</ol>
+<h2 id="step-4-start-candle-maker-service">Step 4: Start candle-maker service</h2>
+<ol>
+<li>Execute <code>docker exec -it candle_maker bash</code></li>
+<li>Execute <code>tmux</code></li>
+<li>Execute <code>python candle_maker.py</code></li>
+</ol>
+<h2 id="step-5-start-prediction-service">Step 5: Start prediction service</h2>
+<ol>
+<li>Execute <code>docker exec -it predict bash</code></li>
+<li>Execute <code>tmux</code></li>
+<li>Execute <code>python process_candle.py</code></li>
+</ol>
+<h2 id="step-6-get-gap-data">Step 6: Get gap data</h2>
+<ol>
+<li>Execute <code>docker exec -it backfill bash</code></li>
+<li>Execute <code>time python fetch_historical_trade_date.py</code> after update since last time stamp</li>
+<li>Execute <code>time python load_historical_data_as_candles.py</code></li>
+</ol>
+<h2 id="step-7-setup-tradebot">Step 7: Setup Tradebot</h2>
+<ol>
+<li>Execute <code>docker exec -it trade_bot bash</code></li>
+<li>Execute <code>time python trade_bot.py</code></li>
+<li>Setup cronjob:
+<ol>
+<li>crontab -e (quickly learn vim to add a line!)</li>
+<li><code>*/5 * * * * sleep 30; /usr/local/bin/python /app/trade_bot.py &gt;&gt; /var/log/container.log 2&gt;&amp;1</code></li>
+</ol>
+</li>
+</ol>
+<h2 id="step-8-setup-model-training">Step 8: Setup Model training</h2>
+<ol>
+<li>Execute <code>docker exec -it train bash</code></li>
+<li>Execute <code>time python train.py</code></li>
+<li>Setup cronjob:
+<ol>
+<li>crontab -e (quickly learn vim to add a line!)</li>
+<li><code>50 * * * * sleep 30; /usr/local/bin/python /app/train.py &gt; /var/log/container.log 2&gt;&amp;1</code></li>
+</ol>
+</li>
+</ol>
+<h2 id="step-9-setup-streamlit-app">Step 9: Setup streamlit app</h2>
+<ol>
+<li>Execute <code>docker exec -it streamlit_app bash</code></li>
+<li>Execute <code>tmux</code></li>
+<li>Execute <code>streamlit run streamlit_app.py</code></li>
+</ol>
+<h2 id="tmux">TMUX</h2>
+<ul>
+<li>
+<p><strong>List sessions:</strong>
+<code>tmux ls</code></p>
+</li>
+<li>
+<p><strong>Attach to session:</strong>
+<code>tmux attach -t &lt;session-name&gt;</code></p>
+</li>
+<li>
+<p><strong>Detach:</strong>
+Press <code>Ctrl+b</code>, then <code>d</code></p>
+</li>
+</ul>
+<h2 id="vim">VIM</h2>
+<ul>
+<li>
+<p><strong>Enter edit mode:</strong>
+Press <code>i</code></p>
+</li>
+<li>
+<p><strong>Paste (in insert mode):</strong>
+Use your terminal's paste (e.g., <code>Ctrl+Shift+V</code> or right-click paste)</p>
+</li>
+<li>
+<p><strong>Save and exit:</strong>
+Press <code>Esc</code>, then type <code>:wq</code> and press <code>Enter</code></p>
+</li>
+</ul>
+<h2 id="grading-rubric">Grading Rubric</h2>
+<table>
+<thead>
+<tr>
+<th>Points</th>
+<th>Requirement</th>
+<th>How It Will Be Graded</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>30</td>
+<td>crypto-trades topic</td>
+<td>Grader will ask you to show new trades.</td>
+</tr>
+<tr>
+<td>30</td>
+<td>crypto-candles topic</td>
+<td>Grader will ask you to show new candles.</td>
+</tr>
+<tr>
+<td>30</td>
+<td>Run <code>last_predictions</code></td>
+<td>Grader will ask you to run the file and print the last 20 predictions.</td>
+</tr>
+<tr>
+<td>30</td>
+<td>12 trained models in data folder</td>
+<td>Grader will ask you to show the folder (SSH into the box using VS Code and display the folder contents).</td>
+</tr>
+<tr>
+<td>30</td>
+<td>Streamlit app shows 30 days of candles</td>
+<td>Grader will inspect your Streamlit app to verify it displays 30 days worth of candle data.</td>
+</tr>
+<tr>
+<td>30</td>
+<td>12 hours worth of trading</td>
+<td>Grader will inspect your Streamlit app for at least 12 hours of trading data.</td>
+</tr>
+<tr>
+<td>20</td>
+<td>24 hours worth of trading</td>
+<td>Grader will inspect your Streamlit app for at least 24 hours of trading data.</td>
+</tr>
+<tr>
+<td>10</td>
+<td>48 hours worth of trading</td>
+<td>Grader will inspect your Streamlit app for at least 48 hours of trading data.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>72 hours worth of trading</td>
+<td>Grader will inspect your Streamlit app for at least 72 hours of trading data.</td>
+</tr>
+<tr>
+<td>30</td>
+<td>public streamlit app</td>
+<td>Grader will inspect your Streamlit app                                                              s</td>
+</tr>
+</tbody>
+</table>
+<h2 id="feature-information">Feature Information</h2>
+<table>
+<thead>
+<tr>
+<th>Feature Name</th>
+<th>Description / What It Does</th>
+<th>Window/Range (Minutes)</th>
+<th>Optuna Tuned?</th>
+<th>Notes (1-min Candle Context)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>above_sma_10</td>
+<td>1 if close &gt; 10-min SMA, else 0</td>
+<td>10</td>
+<td>No</td>
+<td>10 min SMA</td>
+</tr>
+<tr>
+<td>above_sma_20</td>
+<td>1 if close &gt; 20-min SMA, else 0</td>
+<td>20</td>
+<td>No</td>
+<td>20 min SMA</td>
+</tr>
+<tr>
+<td>above_sma_5</td>
+<td>1 if close &gt; 5-min SMA, else 0</td>
+<td>5</td>
+<td>No</td>
+<td>5 min SMA</td>
+</tr>
+<tr>
+<td>adx</td>
+<td>Average Directional Index, trend strength indicator</td>
+<td>14 (TA-Lib default)</td>
+<td>No</td>
+<td>14-min ADX</td>
+</tr>
+<tr>
+<td>adx_strong</td>
+<td>1 if ADX &gt; 25, else 0 (trend strength flag)</td>
+<td>14</td>
+<td>No</td>
+<td>14-min ADX</td>
+</tr>
+<tr>
+<td>asia_time_cos</td>
+<td>Cosine encoding of normalized Asia market time</td>
+<td>0–1</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>asia_time_sin</td>
+<td>Sine encoding of normalized Asia market time</td>
+<td>0–1</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>atr</td>
+<td>Average True Range, measures volatility</td>
+<td>14 (TA-Lib default)</td>
+<td>No</td>
+<td>14-min window</td>
+</tr>
+<tr>
+<td>atr_ratio</td>
+<td>ATR divided by close price</td>
+<td>14</td>
+<td>No</td>
+<td>14-min ATR</td>
+</tr>
+<tr>
+<td>bb_position</td>
+<td>(Close - lower BB) / (upper BB - lower BB)</td>
+<td>10–40</td>
+<td>Yes (10–40)</td>
+<td>10–40 min window</td>
+</tr>
+<tr>
+<td>bb_width</td>
+<td>Bollinger Band width (upper - lower) / middle</td>
+<td>10–40</td>
+<td>Yes (10–40)</td>
+<td>10–40 min window</td>
+</tr>
+<tr>
+<td>day_of_week</td>
+<td>Day of week (0=Monday, 6=Sunday)</td>
+<td>0–6</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>direction_10</td>
+<td>Sign of 10-min price change</td>
+<td>10</td>
+<td>No</td>
+<td>10 min direction</td>
+</tr>
+<tr>
+<td>direction_20</td>
+<td>Sign of 20-min price change</td>
+<td>20</td>
+<td>No</td>
+<td>20 min direction</td>
+</tr>
+<tr>
+<td>direction_5</td>
+<td>Sign of 5-min price change</td>
+<td>5</td>
+<td>No</td>
+<td>5 min direction</td>
+</tr>
+<tr>
+<td>dx</td>
+<td>Directional Movement Index, trend strength</td>
+<td>14 (TA-Lib default)</td>
+<td>No</td>
+<td>14-min window</td>
+</tr>
+<tr>
+<td>ewma_close</td>
+<td>Exponential weighted moving average of close price</td>
+<td>3–40</td>
+<td>Yes (3–40)</td>
+<td>3–40 min smoothing</td>
+</tr>
+<tr>
+<td>ewma_volume</td>
+<td>Exponential weighted moving average of volume</td>
+<td>3–40</td>
+<td>Yes (3–40)</td>
+<td>3–40 min smoothing</td>
+</tr>
+<tr>
+<td>hour_cos</td>
+<td>Cosine encoding of hour of day</td>
+<td>0–23</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>hour_sin</td>
+<td>Sine encoding of hour of day</td>
+<td>0–23</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>macd</td>
+<td>MACD line: fast EMA - slow EMA</td>
+<td>fast/slow tunable</td>
+<td>Yes (1–19, 2–40)</td>
+<td>Fast/slow EMA in minutes</td>
+</tr>
+<tr>
+<td>macd_12_26</td>
+<td>MACD line with fast=12, slow=26</td>
+<td>12, 26</td>
+<td>No</td>
+<td>Standard MACD</td>
+</tr>
+<tr>
+<td>macd_5_35</td>
+<td>MACD line with fast=5, slow=35</td>
+<td>5, 35</td>
+<td>No</td>
+<td>Variant MACD</td>
+</tr>
+<tr>
+<td>macd_cross_12_26</td>
+<td>1 if MACD_12_26 crosses above its signal, else 0</td>
+<td>12, 26</td>
+<td>No</td>
+<td>Standard MACD</td>
+</tr>
+<tr>
+<td>macd_cross_5_35</td>
+<td>1 if MACD_5_35 crosses above its signal, else 0</td>
+<td>5, 35</td>
+<td>No</td>
+<td>Variant MACD</td>
+</tr>
+<tr>
+<td>macd_hist</td>
+<td>MACD histogram: macd - macd_signal</td>
+<td>Derived</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>macd_hist_12_26</td>
+<td>Histogram for MACD_12_26</td>
+<td>Derived</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>macd_hist_5_35</td>
+<td>Histogram for MACD_5_35</td>
+<td>Derived</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>macd_signal</td>
+<td>Signal line: EMA of MACD line</td>
+<td>9 (TA-Lib default)</td>
+<td>No</td>
+<td>9-min EMA of MACD</td>
+</tr>
+<tr>
+<td>macd_signal_12_26</td>
+<td>Signal line for MACD_12_26</td>
+<td>9</td>
+<td>No</td>
+<td>Standard MACD</td>
+</tr>
+<tr>
+<td>macd_signal_5_35</td>
+<td>Signal line for MACD_5_35</td>
+<td>9</td>
+<td>No</td>
+<td>Variant MACD</td>
+</tr>
+<tr>
+<td>mfi</td>
+<td>Money Flow Index, volume-weighted RSI</td>
+<td>14 (TA-Lib default)</td>
+<td>No</td>
+<td>14-min window</td>
+</tr>
+<tr>
+<td>minute_of_day</td>
+<td>Minutes since midnight (0-1439)</td>
+<td>0–1439</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>minutes_from_asia_open</td>
+<td>Minutes since Asia market open (01:00 UTC)</td>
+<td>0–1439</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>minutes_from_europe_open</td>
+<td>Minutes since Europe market open (07:00 UTC)</td>
+<td>0–1439</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>minutes_from_us_open</td>
+<td>Minutes since US market open (13:00 UTC)</td>
+<td>0–1439</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>momentum_15</td>
+<td>15-period percent change in close price</td>
+<td>15</td>
+<td>No</td>
+<td>15 min momentum</td>
+</tr>
+<tr>
+<td>momentum_5</td>
+<td>5-period percent change in close price</td>
+<td>5</td>
+<td>No</td>
+<td>5 min momentum</td>
+</tr>
+<tr>
+<td>obv</td>
+<td>On-Balance Volume, cumulative volume flow</td>
+<td>All data</td>
+<td>No</td>
+<td>Cumulative</td>
+</tr>
+<tr>
+<td>obv_rolling</td>
+<td>Rolling mean of OBV</td>
+<td>5–60</td>
+<td>Yes (5–60)</td>
+<td>5–60 min average</td>
+</tr>
+<tr>
+<td>obv_trend</td>
+<td>OBV multiplied by ADX (volume trend weighted by trend strength)</td>
+<td>Derived</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>range_ratio</td>
+<td>(High - Low) / Close, measures daily range relative to price</td>
+<td>1</td>
+<td>No</td>
+<td>Current bar</td>
+</tr>
+<tr>
+<td>rolling_volatility</td>
+<td>Rolling std dev of close price (volatility)</td>
+<td>10–60</td>
+<td>Yes (10–60)</td>
+<td>10–60 min window</td>
+</tr>
+<tr>
+<td>rsi</td>
+<td>Relative Strength Index, momentum oscillator</td>
+<td>14 (TA-Lib default)</td>
+<td>No</td>
+<td>14-min RSI</td>
+</tr>
+<tr>
+<td>sar</td>
+<td>Parabolic SAR, trend-following stop and reverse</td>
+<td>N/A</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>slope_10</td>
+<td>Slope of close price over 10 periods</td>
+<td>10</td>
+<td>No</td>
+<td>10 min slope</td>
+</tr>
+<tr>
+<td>tema</td>
+<td>Triple Exponential Moving Average</td>
+<td>10–70</td>
+<td>Yes (10–70)</td>
+<td>10–70 min smoothing</td>
+</tr>
+<tr>
+<td>time_afternoon</td>
+<td>1 if time segment is afternoon (12:00–18:00 UTC), else 0</td>
+<td>720–1080</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>time_evening</td>
+<td>1 if time segment is evening (18:00–24:00 UTC), else 0</td>
+<td>1080–1440</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>time_morning</td>
+<td>1 if time segment is morning (06:00–12:00 UTC), else 0</td>
+<td>360–720</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>time_night</td>
+<td>1 if time segment is night (00:00–06:00 UTC), else 0</td>
+<td>0–360</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>time_volume</td>
+<td>minute_of_day multiplied by volume_ratio</td>
+<td>20</td>
+<td>No</td>
+<td>20 min EMA</td>
+</tr>
+<tr>
+<td>trix</td>
+<td>TRIX, triple-smoothed EMA rate of change</td>
+<td>10–70</td>
+<td>Yes (10–70)</td>
+<td>10–70 min smoothing</td>
+</tr>
+<tr>
+<td>us_time_cos</td>
+<td>Cosine encoding of normalized US market time</td>
+<td>0–1</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>us_time_sin</td>
+<td>Sine encoding of normalized US market time</td>
+<td>0–1</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>volume_ema</td>
+<td>Exponential moving average of volume</td>
+<td>20</td>
+<td>No</td>
+<td>20 min EMA</td>
+</tr>
+<tr>
+<td>volume_oscillator</td>
+<td>(5-min MA of volume / 20-min MA of volume) - 1, as %</td>
+<td>5, 20</td>
+<td>No</td>
+<td>5 and 20 min averages</td>
+</tr>
+<tr>
+<td>volume_ratio</td>
+<td>Volume divided by volume_ema</td>
+<td>20</td>
+<td>No</td>
+<td>20 min EMA</td>
+</tr>
+<tr>
+<td>volume_spike</td>
+<td>Volume divided by rolling mean volume</td>
+<td>10–60</td>
+<td>Yes (10–60)</td>
+<td>Same as rolling_volatility</td>
+</tr>
+<tr>
+<td>volume_volatility</td>
+<td>volume_ratio multiplied by rolling_volatility</td>
+<td>10–60</td>
+<td>Yes (10–60)</td>
+<td>10–60 min window</td>
+</tr>
+<tr>
+<td>vwap_ratio</td>
+<td>Close price divided by daily VWAP</td>
+<td>1 day</td>
+<td>No</td>
+<td>-</td>
+</tr>
+<tr>
+<td>willr</td>
+<td>Williams %R, overbought/oversold indicator</td>
+<td>14 (TA-Lib default)</td>
+<td>No</td>
+<td>14-min window</td>
+</tr>
+</tbody>
+</table>
+
+            
+            
+        </body>
+        </html>

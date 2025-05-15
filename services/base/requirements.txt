@@ -1,0 +1,16 @@
+confluent-kafka
+duckdb
+joblib
+jupyter
+lightgbm
+matplotlib
+optuna
+pandas
+plotly
+pyarrow
+python-dotenv
+quixstreams
+scikit-learn
+streamlit
+TA-Lib
+websockets

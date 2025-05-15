@@ -1,0 +1,155 @@
+version: '3.8'
+
+networks:
+  trading_network:
+    driver: bridge
+
+volumes:
+  redpanda-0: null
+  duckdb-data:
+
+
+services:
+  redpanda-0:
+    container_name: redpanda-0
+    image: docker.redpanda.com/redpandadata/redpanda:v25.1.1
+    command:
+      - redpanda
+      - start
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda-0:9092,external://localhost:19092
+      - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
+      - --advertise-pandaproxy-addr internal://redpanda-0:8082,external://localhost:18082
+      - --schema-registry-addr internal://0.0.0.0:8081,external://0.0.0.0:18081
+      - --rpc-addr redpanda-0:33145
+      - --advertise-rpc-addr redpanda-0:33145
+      - --mode dev-container
+      - --smp 1
+      - --default-log-level=info
+    volumes:
+      - redpanda-0:/var/lib/redpanda/data
+    networks:
+      - trading_network
+    ports:
+      - "127.0.0.1:18081:18081"
+      - "127.0.0.1:18082:18082"
+      - "127.0.0.1:19092:19092"
+      - "127.0.0.1:19644:9644"
+
+  console:
+    container_name: redpanda-console
+    image: docker.redpanda.com/redpandadata/console:v3.0.0
+    networks:
+      - trading_network
+    entrypoint: /bin/sh
+    command: -c 'echo "$$CONSOLE_CONFIG_FILE" > /tmp/config.yml; /app/console'
+    environment:
+      CONFIG_FILEPATH: /tmp/config.yml
+      CONSOLE_CONFIG_FILE: |
+        kafka:
+          brokers: ["redpanda-0:9092"]
+        schemaRegistry:
+          enabled: true
+          urls: ["http://redpanda-0:8081"]
+        redpanda:
+          adminApi:
+            enabled: true
+            urls: ["http://redpanda-0:9644"]
+    ports:
+      - 8080:8080
+    depends_on:
+      - redpanda-0
+
+  dev_box:
+    build:
+      context: ./services/base
+    image: ml-trading-service
+    container_name: dev_box
+    networks:
+      - trading_network
+    volumes:
+      - ./services/dev_box:/app
+      - ./data:/data
+    depends_on:
+      - redpanda-0
+    ports:
+      - 8888:8888
+
+  backfill:
+    image: ml-trading-service
+    container_name: backfill
+    networks:
+      - trading_network
+    volumes:
+      - ./services/backfill:/app
+      - ./data:/data
+    depends_on:
+      - redpanda-0
+
+  realtime:
+    image: ml-trading-service
+    container_name: realtime
+    networks:
+      - trading_network
+    volumes:
+      - ./services/realtime:/app
+      - ./data:/data
+    depends_on:
+      - redpanda-0
+
+  train:
+    image: ml-trading-service
+    container_name: train
+    networks:
+      - trading_network
+    volumes:
+      - ./services/train:/app
+      - ./data:/data
+    depends_on:
+      - redpanda-0
+
+  predict:
+    image: ml-trading-service
+    container_name: predict
+    networks:
+      - trading_network
+    volumes:
+      - ./services/predict:/app
+      - ./data:/data
+    depends_on:
+      - redpanda-0
+
+  trade_bot:
+    image: ml-trading-service
+    container_name: trade_bot
+    networks:
+      - trading_network
+    volumes:
+      - ./services/trade_bot:/app
+      - ./data:/data
+    depends_on:
+      - redpanda-0
+
+  streamlit_app:
+    image: ml-trading-service
+    container_name: streamlit_app
+    networks:
+      - trading_network
+    volumes:
+      - ./services/streamlit_app:/app
+      - ./data:/data
+    depends_on:
+      - redpanda-0
+    ports:
+      - 8501:8501
+
+  candle_maker:
+    image: ml-trading-service
+    container_name: candle_maker
+    networks:
+      - trading_network
+    volumes:
+      - ./services/candle_maker:/app
+      - ./data:/data
+    depends_on:
+      - redpanda-0
